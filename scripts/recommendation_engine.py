@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import math
 import random
 
 df = pd.read_csv('data/mvp_recipes_clean.csv')
@@ -72,7 +71,56 @@ list(df.columns.values) #command to list all the names of the columns
 
 #Now let's get to the daily meal planner
 
-def generate_daily_meal_plan(df_filtered = df): #fix this function next
+def calories_protein_goals():
+    '''Function to specify your daily goal of calories and of protein'''
+    calories_protein = [None, None]
+    while True:
+        try:
+            calories = int(input("What is your desired caloric goal for the day? Please enter a number "))
+            if calories > 0 and calories < 10000:
+                calories_protein[1] = calories
+                break
+        except ValueError:
+            print("Please enter a valid number")
+    while True:
+        try:
+            protein = int(input("What is your desired protein goal for the day? Please enter a number "))
+            if protein > 0 and protein < 1000:
+                calories_protein[2] = protein
+                break
+            else:
+                print("Please enter a number in the range 0 to 1000 for protein")
+        except ValueError:
+            print("Please enter a valid number")
+    return(calories_protein)
+
+def generate_meal_names(count):
+    """Generate appropriate meal names based on count"""
+    base_names = ["Breakfast", "Lunch", "Dinner"]
+    
+    if count <= 3:
+        return base_names[:count]
+    elif count == 4:
+        return ["Breakfast", "Lunch", "Snack", "Dinner"]
+    elif count == 5:
+        return ["Breakfast", "Mid-Morning", "Lunch", "Afternoon Snack", "Dinner"]
+    elif count == 6:
+        return ["Breakfast", "Mid-Morning", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack"]
+    else:
+        # For 7+ meals, use numbered approach
+        return [f"Meal {i+1}" for i in range(count)]
+            
+def number_of_meals(df_filtered = df, target_calories = 2500, target_protein = 120, max_meals = 6):
+    '''Function to estimate the number of meals that would be optimal for given caloric/protein goals'''
+    
+    avg_calories = df_filtered["Calories"].mean()
+    avg_protein = df_filtered["ProteinContent"].mean()
+    
+    
+
+
+
+def generate_daily_meal_plan(df_filtered = df): #make this more flexible -> hit protein and caloric goals & dynamically select number of meals during the day
     '''Generates a daily plan of meals from the filtered recipes dataframe'''
     
     if df_filtered.empty: #czy to jest dobry sposob na wpisanie pustego df'a?
@@ -80,15 +128,36 @@ def generate_daily_meal_plan(df_filtered = df): #fix this function next
         return None
     
     meal_slots = ['Breakfast', 'Lunch', 'Dinner'] #Consider more flex here
-    meal_plan = {}
+    meal_plan = {meal: None for meal in meal_slots}
     meal_plan = meal_plan.fromkeys(meal_slots)
+    
+    calories = 0
+    protein = 0
+    
+    print("\n" + "="*60)
+    print("🍽️  YOUR DAILY MEAL PLAN")
+    print("="*60)
     
     for meal in meal_plan.keys():
         #For now I will implement randomly choosing meals from the filtered df
         r = random.randint(1, len(df_filtered))
-        print(r)
-        meal_plan.update({"meal": df_filtered.loc[r, "Name"]})
+
+        selected_meal = df_filtered.iloc[r]["Name"]
+        meal_calories = int(df_filtered.iloc[r]["Calories"])
+        meal_protein = int(df_filtered.iloc[r]["ProteinContent"])
+        
+        meal_plan.update({meal: selected_meal})
+        
+        print(f"\n🌅 {meal.upper()}")
+        print(f"   📝 {selected_meal}")
+        print(f"   🔥 {meal_calories} calories")
+        print(f"   💪 {meal_protein}g protein")
+        
+        calories += meal_calories
+        protein += meal_protein
+    print("Our total calorie count for the day is ", calories)
+    print("Our total protien count for the day is ", protein)
     return(meal_plan)
-    
-    
-df.loc[1030, "Name"]
+
+
+### Do something about the fact that the meals have so little protein (?)
