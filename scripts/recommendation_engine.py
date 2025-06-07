@@ -94,7 +94,7 @@ def calories_protein_goals():
             print("Please enter a valid number")
     return(calories_protein)
 
-def generate_meal_names(count):
+def generate_meal_names(count = 3):
     """Generate appropriate meal names based on count"""
     base_names = ["Breakfast", "Lunch", "Dinner"]
     
@@ -109,6 +109,26 @@ def generate_meal_names(count):
     else:
         # For 7+ meals, use numbered approach
         return [f"Meal {i+1}" for i in range(count)]
+ 
+def optimal_weights_per_meal(count = 3):
+    '''Give appropriate weight to each meal during the day, to assign appropriate amount of calories/protein to each of them'''
+    #Defining weights for every possible named meal (see function above)
+    meal_weights = {"Breakfast": 3, "Lunch": 4, "Dinner": 4, "Mid-Morning": 2, "Afternoon Snack": 2, "Evening Snack": 2, "Default": 3} 
+    meal_slots = generate_meal_names(count)
+    meal_plan_weights = {meal: None for meal in meal_slots}
+    for meal in meal_plan_weights:
+        if meal in meal_weights: #this should somehow get the key and not the value
+            meal_plan_weights[meal] = meal_weights[meal] 
+        else:
+            meal_plan_weights[meal] = meal_weights["Default"]
+            
+    #calculate the total sum of points
+    # total_points = sum(meal_plan_weights.values())
+    total_weight = sum(meal_plan_weights.values())
+    for meal in meal_plan_weights:
+        meal_plan_weights[meal] = round(meal_plan_weights[meal] / total_weight,2) #possibly remove the rounding if I feel like it will make it simpler
+    
+    return(meal_plan_weights) 
             
 def number_of_meals(df_filtered = df, target_calories = 2500, target_protein = 120, max_meals = 6):
     '''Function to estimate the number of meals that would be optimal for given caloric/protein goals
@@ -157,8 +177,8 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     print("\n" + "="*60)
     print("="*60)
     
-    for meal in meal_slots:  # Iterate directly over meal_slots instead of meal_plan.keys()
-        # Combined filtering in one step
+    for meal in meal_slots:
+        #Filtering the dataframe for a list of meals that fulfill our criteria, +- standard deviation
         df_suitable = df_filtered.loc[
             (df_filtered['Calories'] >= calories_per_meal - deviation_calories) &
             (df_filtered['Calories'] <= calories_per_meal + deviation_calories) &
@@ -184,3 +204,11 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     print(f"\nTotal calories: {total_calories}")
     print(f"Total protein: {total_protein}")
     return meal_plan
+
+test_dict = {"meal": None, "kaczka": ["dziwaczka", 'normalaczka']}
+test_dict['kaczka']
+
+'kaczka' in test_dict
+
+dict_numeric = {"1": 1, "2": 2}
+sum(dict_numeric.values())
