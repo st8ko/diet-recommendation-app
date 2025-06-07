@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 df = pd.read_csv('data/mvp_recipes_clean.csv')
-print(df.head())
+# print(df.head())
 
 def choose_preferences():
     """Collect user dietary preferences."""
@@ -130,90 +130,57 @@ def number_of_meals(df_filtered = df, target_calories = 2500, target_protein = 1
 
 
 
-def generate_daily_meal_plan(df_filtered = df, target_calories = 2500, target_protein = 120, max_meals = 6): #make this more flexible -> hit protein and caloric goals & dynamically select number of meals during the day
+def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protein=120, max_meals=6):
     '''Generates a daily plan of meals from the filtered recipes dataframe'''
     
-    if df_filtered.empty: #czy to jest dobry sposob na wpisanie pustego df'a?
+    if df_filtered.empty:
         print('There are no recipes to choose! Check your filters and try again')
         return None
     
-    #I need to estimate the optimal caloric and protein count for each meal
-    # meal_slots = ['Breakfast', 'Lunch', 'Dinner'] #Consider more flex here
-    meal_slots = number_of_meals(df_filtered = df, target_calories = 2500, target_protein = 120, max_meals = 6)
+    # Get meal slots and initialize plan
+    meal_slots = number_of_meals(df_filtered, target_calories, target_protein, max_meals)
     meal_plan = {meal: None for meal in meal_slots}
-    meal_plan = meal_plan.fromkeys(meal_slots)
     
-    #Optimal calories and protein per meal counting
-    meal_number = len(meal_plan)
-    #Calculate optimal calories per meal, for now set them to be equal
-    meal_calories = np.zeros(len(meal_plan)) # Initialize an empty vector to fill it up later
-    for meal in range(0, len(meal_calories)-1):
-        meal_calories[meal] = target_calories / len(meal_plan)
+    # Calculate targets per meal (simplified dictionary creation)
+    calories_per_meal = target_calories // len(meal_slots)
+    protein_per_meal = target_protein // len(meal_slots)
         
-    #Calculate optimal protein per meal, for now set it to be equal
-    meal_protein = np.zeros(len(meal_plan)) # Initialize an empty vector to fill it up later
-
-    for meal in range(0, len(meal_protein)-1):
-        meal_protein[meal] = target_protein // len(meal_plan)
+    # Calculate allowable deviations
+    deviation_calories = int(df_filtered["Calories"].std())
+    deviation_protein = int(df_filtered["ProteinContent"].std())
     
-    #Allow for standard deviations in the meal protein/calories 
-    deviation_calories = df_filtered["Calories"].std()
-    deviation_protein = df_filtered["ProteinContent"].std()
-    
+    # Initialize totals
+    total_calories = 0
+    total_protein = 0
+        
     print("🍽️  YOUR DAILY MEAL PLAN")
     print("\n" + "="*60)
     print("="*60)
     
-    for meal in meal_plan.keys():
-        #First filter the df by the desired caloric and protein content for each meal, with standard deviation
-        df_placeholder = df_filtered.loc[(df_filtered['Calories' >= meal_calories[meal] - deviation_calories]) & (df_filtered['Calories' >= meal_calories[meal] + deviation_calories])]
-        df_placeholder = df_placeholder.loc[(df_filtered['ProteinContent' >= meal_protein[meal] - deviation_protein]) & (df_filtered['ProteinContent' >= meal_protein[meal] + deviation_protein])]
-        #now that we have meals in the desired protein & caloric range let's implement a random selection from this range
-        r = random.randint(0, len(df_placeholder)-1)
-        selected_meal = df_placeholder.iloc[r]["Name"]
-        meal_plan.update({meal: selected_meal})
+    for meal in meal_slots:  # Iterate directly over meal_slots instead of meal_plan.keys()
+        # Combined filtering in one step
+        df_suitable = df_filtered.loc[
+            (df_filtered['Calories'] >= calories_per_meal - deviation_calories) &
+            (df_filtered['Calories'] <= calories_per_meal + deviation_calories) &
+            (df_filtered['ProteinContent'] >= protein_per_meal - deviation_protein) & 
+            (df_filtered['ProteinContent'] <= protein_per_meal + deviation_protein)
+        ]
         
-        selected_meal = df_filtered.iloc[r]["Name"]
-        meal_calories = int(df_filtered.iloc[r]["Calories"])
-        meal_protein = int(df_filtered.iloc[r]["ProteinContent"])
+        if len(df_suitable) == 0:
+            print(f"No suitable recipes found for {meal}")
+            continue
         
-        calories += meal_calories
-        protein += meal_protein
+        # Select and assign recipe
+        selected_recipe = df_suitable.sample(n=1).iloc[0]
+        meal_plan[meal] = selected_recipe["Name"]
         
-    print("Our total calorie count for the day is ", calories)
-    print("Our total protien count for the day is ", protein)
-    return(meal_plan)
-
-    #This part is cut off now
-    # calories = 0
-    # protein = 0
-    
-    print("🍽️  YOUR DAILY MEAL PLAN")
-    print("\n" + "="*60)
-    print("="*60)
-    
-    
-    for meal in meal_plan.keys():
-        #For now I will implement randomly choosing meals from the filtered df
-        r = random.randint(1, len(df_filtered))
-        #Implementing non-random meal choosing of the meals, based on the optimal count of calories
-        selected_meal = df_filtered.iloc[r]["Name"]
-        meal_calories = int(df_filtered.iloc[r]["Calories"])
-        meal_protein = int(df_filtered.iloc[r]["ProteinContent"])
+        # Update totals
+        total_calories += int(selected_recipe["Calories"])
+        total_protein += int(selected_recipe["ProteinContent"])
         
-        meal_plan.update({meal: selected_meal})
+        # Optional: Print each meal as it's selected
+        print(f"{meal}: {selected_recipe['Name']} ({int(selected_recipe['Calories'])} cal, {int(selected_recipe['ProteinContent'])}g protein)")
         
-        print(f"\n🌅 {meal.upper()}")
-        print(f"   📝 {selected_meal}")
-        print(f"   🔥 {meal_calories} calories")
-        print(f"   💪 {meal_protein}g protein")
-
-
-        calories += meal_calories
-        protein += meal_protein
-    print("Our total calorie count for the day is ", calories)
-    print("Our total protien count for the day is ", protein)
-    return(meal_plan)
-
-
-### Do something about the fact that the meals have so little protein (?)
+    print(f"\nTotal calories: {total_calories}")
+    print(f"Total protein: {total_protein}")
+    return meal_plan
