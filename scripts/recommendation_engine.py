@@ -150,7 +150,7 @@ def number_of_meals(df_filtered = df, target_calories = 2500, target_protein = 1
 
 
 
-def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protein=120, max_meals=6):
+def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protein=120, tolerance = 0.2, max_meals = 6): #doesn't the max meal count contradict the use of the number of meals generator?
     '''Generates a daily plan of meals from the filtered recipes dataframe'''
     
     if df_filtered.empty:
@@ -161,13 +161,13 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     meal_slots = number_of_meals(df_filtered, target_calories, target_protein, max_meals)
     meal_plan = {meal: None for meal in meal_slots}
     
-    # Calculate targets per meal (simplified dictionary creation)
-    calories_per_meal = target_calories // len(meal_slots)
-    protein_per_meal = target_protein // len(meal_slots)
-        
-    # Calculate allowable deviations
-    deviation_calories = int(df_filtered["Calories"].std())
-    deviation_protein = int(df_filtered["ProteinContent"].std())
+    # Calculate targets per meal, the weights could be adjusted
+    calories_per_meal = {meal: optimal_weights_per_meal(len(meal_plan))[meal] * target_calories for meal in optimal_weights_per_meal(len(meal_plan))}
+    protein_per_meal = {meal: optimal_weights_per_meal(len(meal_plan))[meal] * target_protein for meal in optimal_weights_per_meal(len(meal_plan))}
+    
+    # Calculate allowable deviations based on tolerance
+    deviation_calories = {meal: tolerance * calories_per_meal[meal] for meal in meal_slots}
+    deviation_protein = {meal: tolerance * protein_per_meal[meal] for meal in meal_slots}
     
     # Initialize totals
     total_calories = 0
@@ -180,10 +180,10 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     for meal in meal_slots:
         #Filtering the dataframe for a list of meals that fulfill our criteria, +- standard deviation
         df_suitable = df_filtered.loc[
-            (df_filtered['Calories'] >= calories_per_meal - deviation_calories) &
-            (df_filtered['Calories'] <= calories_per_meal + deviation_calories) &
-            (df_filtered['ProteinContent'] >= protein_per_meal - deviation_protein) & 
-            (df_filtered['ProteinContent'] <= protein_per_meal + deviation_protein)
+            (df_filtered['Calories'] >= calories_per_meal[meal] - deviation_calories[meal]) &
+            (df_filtered['Calories'] <= calories_per_meal[meal] + deviation_calories[meal]) &
+            (df_filtered['ProteinContent'] >= protein_per_meal[meal] - deviation_protein[meal]) & 
+            (df_filtered['ProteinContent'] <= protein_per_meal[meal] + deviation_protein[meal])
         ]
         
         if len(df_suitable) == 0:
@@ -204,11 +204,3 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     print(f"\nTotal calories: {total_calories}")
     print(f"Total protein: {total_protein}")
     return meal_plan
-
-test_dict = {"meal": None, "kaczka": ["dziwaczka", 'normalaczka']}
-test_dict['kaczka']
-
-'kaczka' in test_dict
-
-dict_numeric = {"1": 1, "2": 2}
-sum(dict_numeric.values())
