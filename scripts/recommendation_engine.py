@@ -204,3 +204,4 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     print(f"\nTotal calories: {total_calories}")
     print(f"Total protein: {total_protein}")
     return meal_plan
+
