@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 df = pd.read_csv('data/mvp_recipes_clean.csv')
-# print(df.head())
+print(df.tail())
 
 def choose_preferences():
     """Collect user dietary preferences."""
@@ -17,8 +17,11 @@ def choose_preferences():
     
     questions = [
         ("Do you want meals that are vegetarian? (y/n): ", ['y', 'n'], 'vegetarian'),
+        ("Do you want your meals pescatarian? (y/n): ", ['y', 'n'], 'pescatarian'),
         ("Do you want your meals vegan? (y/n): ", ['y', 'n'], 'vegan'),
         ("Do you want your meals easy? (y/n): ", ['y', 'n'], 'easy'),
+        ("Do you want your meals diary free? (y/n): ", ['y', 'n'], 'diaryfree'),
+        ('Do you want your meals gluten free? (y/n): ', ['y', 'n',], 'glutenfree'),
         ("Caloric content - low/moderate/high? (l/m/h): ", ['l', 'm', 'h'], 'calories'),
         ("Protein content - low/moderate/high? (l/m/h): ", ['l', 'm', 'h'], 'protein'),
         ("Prep time - quick/standard/long? (q/s/l): ", ['q', 's', 'l'], 'preptime')
@@ -42,8 +45,17 @@ def filter_by_preferences(dataframe = df, preferences = 0): #in future iteration
     if preferences.get('vegan') == 'y':
         df_filtered = df_filtered[df_filtered['Vegan']==1]
         
+    if preferences.get('pescatarian') == 'y':
+        df_filtered = df_filtered[df_filtered['Pescatarian'] ==1]
+        
     if preferences.get('easy') == 'y':
         df_filtered = df_filtered[df_filtered['Easy']==1]
+        
+    if preferences.get('glutenfree') == 'y':
+        df_filtered = df_filtered[df_filtered['GlutenFree'] ==1]
+        
+    if preferences.get('diaryfree') == 'y':
+        df_filtered = df_filtered[df_filtered['DiaryFree'] ==1]
         
     if preferences.get('calories') == 'l':
         df_filtered = df_filtered[df_filtered['LowCalorie']==1]
@@ -69,6 +81,7 @@ def filter_by_preferences(dataframe = df, preferences = 0): #in future iteration
 
 list(df.columns.values) #command to list all the names of the columns
 
+print(df.head(1))
 #Now let's get to the daily meal planner
 
 def calories_protein_goals():
@@ -146,10 +159,6 @@ def number_of_meals(df_filtered = df, target_calories = 2500, target_protein = 1
     
     return(meal_names)
 
-#Create a function that will optimally asign the meals to given categories to hit the daily protein and caloric count
-
-
-
 def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protein=120, tolerance = 0.2, max_meals = 6): #doesn't the max meal count contradict the use of the number of meals generator?
     '''Generates a daily plan of meals from the filtered recipes dataframe'''
     
@@ -179,19 +188,46 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
     
     for meal in meal_slots:
         #Filtering the dataframe for a list of meals that fulfill our criteria, +- standard deviation
+        # Calculate remaining targets
+        remaining_meals = len([m for m in meal_slots if meal_plan[m] is None])
+        remaining_calories = target_calories - total_calories
+        remaining_protein = target_protein - total_protein
+        
+        # Flexible targets for this meal
+        target_cal = remaining_calories / remaining_meals if remaining_meals > 0 else calories_per_meal[meal]
+        target_prot = remaining_protein / remaining_meals if remaining_meals > 0 else protein_per_meal[meal]
+        
+        # Find suitable recipes with wider tolerance
         df_suitable = df_filtered.loc[
-            (df_filtered['Calories'] >= calories_per_meal[meal] - deviation_calories[meal]) &
-            (df_filtered['Calories'] <= calories_per_meal[meal] + deviation_calories[meal]) &
-            (df_filtered['ProteinContent'] >= protein_per_meal[meal] - deviation_protein[meal]) & 
-            (df_filtered['ProteinContent'] <= protein_per_meal[meal] + deviation_protein[meal])
+            (df_filtered['Calories'] >= target_cal * (1 - tolerance)) &
+            (df_filtered['Calories'] <= target_cal * (1 + tolerance)) &
+            (df_filtered['ProteinContent'] >= target_prot * (1 - tolerance)) & 
+            (df_filtered['ProteinContent'] <= target_prot * (1 + tolerance))
         ]
         
+        meal_category_map = {
+            "Lunch": "Lunch/Dinner",
+            "Dinner": "Lunch/Dinner", 
+            "Snack": "Snacks",
+            "Breakfast": "Breakfast"
+        }
+        
+        if meal in meal_category_map:
+            df_suitable = df_suitable.loc[df_suitable["MealCat"] == meal_category_map[meal]]
+                                        
         if len(df_suitable) == 0:
             print(f"No suitable recipes found for {meal}")
             continue
         
         # Select and assign recipe
-        selected_recipe = df_suitable.sample(n=1).iloc[0]
+        # Get the highest rating
+        max_rating = df_suitable['AggregatedRating'].max()
+
+        # Filter for recipes with the highest rating
+        top_rated = df_suitable[df_suitable['AggregatedRating'] == max_rating]
+
+        # Randomly select from the top-rated recipes
+        selected_recipe = top_rated.sample(n=1).iloc[0]
         meal_plan[meal] = selected_recipe["Name"]
         
         # Update totals
@@ -200,8 +236,7 @@ def generate_daily_meal_plan(df_filtered=df, target_calories=2500, target_protei
         
         # Optional: Print each meal as it's selected
         print(f"{meal}: {selected_recipe['Name']} ({int(selected_recipe['Calories'])} cal, {int(selected_recipe['ProteinContent'])}g protein)")
-        
+            
     print(f"\nTotal calories: {total_calories}")
     print(f"Total protein: {total_protein}")
     return meal_plan
-
