@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import random
 import re
+import time
 
 # Set page config
 st.set_page_config(
@@ -11,12 +12,41 @@ st.set_page_config(
     layout="wide"
 )
 
-# Cache the data loading
+# Cache the data loading with progress bar
 @st.cache_data
 def load_data():
-    """Load the recipe dataset"""
+    """Load the recipe dataset with progress indication"""
     try:
+        # Create a progress bar
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # Simulate loading steps with progress updates
+        status_text.text('🔍 Locating recipe database...')
+        progress_bar.progress(20)
+        time.sleep(0.5)
+        
+        status_text.text('📊 Loading recipe data...')
+        progress_bar.progress(40)
         df = pd.read_csv('data/mvp_recipes_clean.csv')
+        time.sleep(0.3)
+        
+        status_text.text('🧹 Processing and cleaning data...')
+        progress_bar.progress(70)
+        time.sleep(0.3)
+        
+        status_text.text('✅ Validating recipe information...')
+        progress_bar.progress(90)
+        time.sleep(0.2)
+        
+        status_text.text('✨ Ready to create your meal plan!')
+        progress_bar.progress(100)
+        time.sleep(0.3)
+        
+        # Clear the progress indicators
+        progress_bar.empty()
+        status_text.empty()
+        
         return df
     except FileNotFoundError:
         st.error("Recipe dataset not found. Please ensure 'data/mvp_recipes_clean.csv' exists.")
@@ -378,20 +408,17 @@ def generate_daily_meal_plan(df_filtered, target_calories=2500, target_protein=1
     }
     
     for meal in meal_slots:
-        # Calculate remaining targets for adaptive planning
+        #Filtering the dataframe for a list of meals that fulfill our criteria, +- standard deviation
+        # Calculate remaining targets
         remaining_meals = len([m for m in meal_slots if m not in meal_plan])
         remaining_calories = target_calories - total_calories
         remaining_protein = target_protein - total_protein
         
-        # Use flexible targets based on remaining needs
-        if remaining_meals > 0:
-            target_cal = remaining_calories / remaining_meals
-            target_prot = remaining_protein / remaining_meals
-        else:
-            target_cal = calories_per_meal[meal]
-            target_prot = protein_per_meal[meal]
+        # Flexible targets for this meal
+        target_cal = calories_per_meal[meal]
+        target_prot = protein_per_meal[meal]
         
-        # Find suitable recipes with tolerance
+        # Find suitable recipes with wider tolerance
         df_suitable = df_filtered.loc[
             (df_filtered['Calories'] >= target_cal * (1 - tolerance)) &
             (df_filtered['Calories'] <= target_cal * (1 + tolerance)) &
@@ -399,11 +426,15 @@ def generate_daily_meal_plan(df_filtered, target_calories=2500, target_protein=1
             (df_filtered['ProteinContent'] <= target_prot * (1 + tolerance))
         ]
         
-        # Apply meal category filtering if available
-        if meal in meal_category_map and 'MealCat' in df_filtered.columns:
-            df_category_filtered = df_suitable.loc[df_suitable["MealCat"] == meal_category_map[meal]]
-            if len(df_category_filtered) > 0:
-                df_suitable = df_category_filtered
+        meal_category_map = {
+            "Lunch": "Lunch/Dinner",
+            "Dinner": "Lunch/Dinner", 
+            "Snack": "Snacks",
+            "Breakfast": "Breakfast"
+        }
+        
+        if meal in meal_category_map:
+            df_suitable = df_suitable.loc[df_suitable["MealCat"] == meal_category_map[meal]]
         
         if len(df_suitable) == 0:
             # Fallback: try without meal category restriction
@@ -452,7 +483,10 @@ def main():
     st.title("🍽️ Daily Meal Planner")
     st.markdown("Create your personalized daily meal plan based on your dietary preferences and goals!")
     
-    # Load data
+    # Show loading message
+    st.markdown("### 🚀 Initializing Meal Planner...")
+    
+    # Load data with progress bar
     df = load_data()
     if df.empty:
         st.stop()
@@ -503,7 +537,7 @@ def main():
     # Display options
     st.sidebar.header("📋 Display Options")
     show_compact = st.sidebar.checkbox("Show compact meal overview", value=True)
-    show_detailed = st.sidebar.checkbox("Show detailed recipe information", value=False)
+    show_detailed = st.sidebar.checkbox("Show detailed recipe information", value=True)  # Changed to True by default
     
     # Main content area
     preferences = collect_preferences()
@@ -574,7 +608,7 @@ def main():
                             st.markdown(f"{cal_status} Calorie target")
                             st.markdown(f"{prot_status} Protein target")
                     
-                    # Detailed recipe information
+                    # Detailed recipe information (now shown by default)
                     if show_detailed:
                         st.markdown("---")
                         st.subheader("🍽️ Detailed Recipe Information")
