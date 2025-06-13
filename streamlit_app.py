@@ -4,6 +4,9 @@ import numpy as np
 import random
 import re
 import time
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 # Set page config
 st.set_page_config(
@@ -11,47 +14,110 @@ st.set_page_config(
     page_icon="🍽️",
     layout="wide"
 )
+import threading
+import time
+import streamlit as st
+import pandas as pd
 
-# Cache the data loading with progress bar
 @st.cache_data
-def load_data():
-    """Load the recipe dataset with progress indication"""
-    try:
-        # Create a progress bar
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        # Simulate loading steps with progress updates
-        status_text.text('🔍 Locating recipe database...')
-        progress_bar.progress(20)
-        time.sleep(0.5)
-        
-        status_text.text('📊 Loading recipe data...')
-        progress_bar.progress(40)
-        df = pd.read_csv('data/mvp_recipes_clean.csv')
-        time.sleep(0.3)
-        
-        status_text.text('🧹 Processing and cleaning data...')
-        progress_bar.progress(70)
-        time.sleep(0.3)
-        
-        status_text.text('✅ Validating recipe information...')
-        progress_bar.progress(90)
-        time.sleep(0.2)
-        
-        status_text.text('✨ Ready to create your meal plan!')
-        progress_bar.progress(100)
-        time.sleep(0.3)
-        
-        # Clear the progress indicators
-        progress_bar.empty()
-        status_text.empty()
-        
-        return df
-    except FileNotFoundError:
-        st.error("Recipe dataset not found. Please ensure 'data/mvp_recipes_clean.csv' exists.")
-        return pd.DataFrame()
+def _load_csv_data():
+    return pd.read_csv('data/mvp_recipes_clean.csv')
 
+def load_data():
+    """Load data with adaptive progress indication"""
+    try:
+        if 'data_loaded' not in st.session_state:
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # Container for the loaded data
+            data_container = {'df': None, 'loading': True, 'error': None}
+            start_time = time.time()
+            
+            def load_in_background():
+                try:
+                    data_container['df'] = _load_csv_data()
+                except Exception as e:
+                    data_container['error'] = e
+                finally:
+                    data_container['loading'] = False
+            
+            # Start loading in background
+            thread = threading.Thread(target=load_in_background)
+            thread.start()
+            
+            # Adaptive progress - speeds up if loading takes longer
+            progress = 0
+            messages = [
+                '🔍 Locating recipe database...',
+                '📊 Loading recipe data...',
+                '📊 Reading CSV file...',
+                '🧹 Processing data...',
+                '🧹 Cleaning data...',
+                '✅ Validating recipe information...',
+                '✨ Almost ready...'
+            ]
+            
+            message_index = 0
+            cycle_count = 0
+            
+            while data_container['loading']:
+                elapsed_time = time.time() - start_time
+                
+                # Adaptive progress calculation
+                if elapsed_time < 3:
+                    # Fast progress for first 3 seconds
+                    progress = min(60, int(elapsed_time * 20))
+                elif elapsed_time < 8:
+                    # Slower progress for 3-8 seconds
+                    progress = 60 + min(25, int((elapsed_time - 3) * 5))
+                else:
+                    # Very slow progress after 8 seconds
+                    progress = 85 + min(10, int((elapsed_time - 8) * 2))
+                
+                # Update message periodically
+                if int(elapsed_time) > message_index and message_index < len(messages):
+                    status_text.text(messages[message_index])
+                    message_index += 1
+                elif message_index >= len(messages):
+                    # Cycle through waiting messages if taking very long
+                    waiting_messages = [
+                        '⏳ Still loading, please wait...',
+                        '🔄 Processing large dataset...',
+                        '⌛ Almost there...'
+                    ]
+                    status_text.text(waiting_messages[cycle_count % len(waiting_messages)])
+                    cycle_count += 1
+                
+                progress_bar.progress(progress)
+                time.sleep(0.3)
+            
+            # Wait for loading to complete
+            thread.join()
+            
+            if data_container['error']:
+                raise data_container['error']
+            
+            # Final progress
+            status_text.text('✨ Ready to create your meal plan!')
+            progress_bar.progress(100)
+            time.sleep(0.3)
+            
+            progress_bar.empty()
+            status_text.empty()
+            
+            st.session_state.data_loaded = True
+            return data_container['df']
+        else:
+            return _load_csv_data()
+            
+    except FileNotFoundError:
+        st.error("Recipe dataset not found.")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()
+    
 def format_time(time_str):
     """Convert PT time format to readable format"""
     if pd.isna(time_str) or time_str == "":
@@ -245,19 +311,19 @@ def collect_preferences():
         st.markdown("**Dietary Requirements:**")
         easy = st.checkbox("Easy recipes only")
         glutenfree = st.checkbox("Gluten free meals only")
-        diaryfree = st.checkbox("Dairy free meals only")
+        dairyfree = st.checkbox("Dairy free meals only")
     
     with col3:
         st.markdown("**Meal Characteristics:**")
         calories = st.selectbox(
             "Caloric content per meal:",
             options=['low', 'moderate', 'high'],
-            index=1  # default to moderate
+            index=2  # default to moderate
         )
         protein = st.selectbox(
             "Protein content per meal:",
             options=['low', 'moderate', 'high'],
-            index=1  # default to moderate
+            index=2  # default to moderate
         )
         preptime = st.selectbox(
             "Preparation time:",
@@ -271,7 +337,7 @@ def collect_preferences():
         'pescatarian': 'y' if pescatarian else 'n',
         'easy': 'y' if easy else 'n',
         'glutenfree': 'y' if glutenfree else 'n',
-        'diaryfree': 'y' if diaryfree else 'n',
+        'dairyfree': 'y' if dairyfree else 'n',
         'calories': calories[0],  # first letter
         'protein': protein[0],
         'preptime': preptime[0]
@@ -296,8 +362,8 @@ def filter_by_preferences(dataframe, preferences):
     if preferences.get('glutenfree') == 'y':
         df_filtered = df_filtered[df_filtered['GlutenFree'] ==1]
         
-    if preferences.get('diaryfree') == 'y':
-        df_filtered = df_filtered[df_filtered['DiaryFree'] ==1]
+    if preferences.get('dairyfree') == 'y':
+        df_filtered = df_filtered[df_filtered['DairyFree'] ==1]
         
     if preferences.get('calories') == 'l':
         df_filtered = df_filtered[df_filtered['LowCalorie']==1]
