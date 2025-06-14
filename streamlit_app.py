@@ -14,10 +14,6 @@ st.set_page_config(
     page_icon="🍽️",
     layout="wide"
 )
-import threading
-import time
-import streamlit as st
-import pandas as pd
 
 @st.cache_data
 def _load_csv_data():
