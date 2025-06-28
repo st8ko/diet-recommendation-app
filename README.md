@@ -252,9 +252,9 @@ This project showcases expertise in:
 Interested in discussing this project or potential collaboration opportunities? 
 
 - 📧 **Email**: [ignacyruszkowski@gmail.com]
-- 💼 **LinkedIn**: [[Your LinkedIn Profile](https://www.linkedin.com/in/igrusz/)]
-- 🐙 **GitHub**: [[Your GitHub Profile](https://github.com/st8ko)]
-- 🌐 **Substack**: [[Your Portfolio Website](https://ignacyr.substack.com/)]
+- 💼 **LinkedIn**: [[LinkedIn](https://www.linkedin.com/in/igrusz/)]
+- 🐙 **GitHub**: [[GitHub Profile](https://github.com/st8ko)]
+- 🌐 **Substack**: [[Substack](https://ignacyr.substack.com/)]
 
 ---
 
