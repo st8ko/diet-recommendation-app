@@ -541,7 +541,141 @@ def generate_daily_meal_plan(df_filtered, target_calories=2500, target_protein=1
     return meal_plan, summary, total_calories, total_protein
 
 # Main Streamlit App
-def main():
+def about_page():
+    """Display the About page with project information"""
+    # Add top navigation hint
+    st.markdown("""
+    <div style="background-color: #f0f8ff; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+        💡 <strong>Tip:</strong> Use the sidebar navigation buttons to switch between <strong>About Project</strong> and <strong>Meal Planner</strong> pages!
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.title("📖 About This Project")
+    st.markdown("---")
+    
+    # Project overview
+    st.markdown("""
+    ## 🍽️ Diet Recommendation App
+    
+    > **A sophisticated nutrition platform that leverages data science to provide personalized meal recommendations from 960,000+ recipes**
+    
+    This comprehensive diet recommendation system demonstrates advanced **data science**, **software engineering**, 
+    and **product development** skills through the creation of a data-driven nutrition platform.
+    """)
+    
+    # Key features
+    st.markdown("""
+    ## 🚀 Key Features
+    
+    ### 📊 **Data Science Excellence**
+    - **Large-Scale Processing**: 960K+ recipes cleaned and processed
+    - **Multi-Source Integration**: Merged multiple Kaggle datasets
+    - **Statistical Analysis**: 99th percentile outlier detection
+    - **Feature Engineering**: 12 dietary classification features
+    - **Data Pipeline**: Automated preprocessing and export
+    
+    ### 🤖 **Intelligent Recommendations**
+    - **Multi-Factor Filtering**: Nutritional targets, dietary restrictions, time preferences
+    - **Meal Planning**: Automated daily plans with optimal distribution
+    - **Adaptive Targeting**: Dynamic meal calculation based on goals
+    - **Rating-Based Selection**: Prioritizes highly-rated recipes
+    - **Nutri-Score Development**: Healthiness scoring system (in progress)
+    
+    ### 💻 **Modern Web Development**
+    - **Interactive UI**: Beautiful Streamlit interface
+    - **Real-time Filtering**: Dynamic preference collection
+    - **Performance Optimization**: Efficient data loading with caching
+    - **User Experience**: Intuitive design and detailed displays
+    """)
+    
+    # Technical stack
+    st.markdown("""
+    ## 🛠️ Technical Stack
+    
+    - **Python 3.11**: Core programming language
+    - **Streamlit**: Interactive web application framework
+    - **Pandas & NumPy**: Data manipulation and analysis
+    - **Scikit-learn**: Machine learning foundations
+    - **Jupyter**: Data analysis and exploration
+    """)
+    
+    # Data sources
+    st.markdown("""
+    ## 📊 Data Sources
+    
+    **Inspiration**: [zakaria-narjis/Diet-Recommendation-System](https://github.com/zakaria-narjis/Diet-Recommendation-System)
+    
+    **Datasets**:
+    - [Food.com Recipes and Reviews](https://www.kaggle.com/datasets/irkaal/foodcom-recipes-and-reviews?select=recipes.csv) (960K+ recipes)
+    - [Food.com Recipes with Search Terms and Tags](https://www.kaggle.com/datasets/shuyangli94/foodcom-recipes-with-search-terms-and-tags) (Enhanced categorization)
+    """)
+    
+    # Project metrics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("📈 Total Recipes", "960K+")
+        st.metric("🧹 Clean Dataset", "477K")
+    with col2:
+        st.metric("🏷️ Features", "12")
+        st.metric("📊 Data Quality", "98.8%")
+    with col3:
+        st.metric("🔥 Avg Calories", "367")
+        st.metric("💪 Avg Protein", "16.4g")
+    
+    st.markdown("---")
+    
+    # GitHub link
+    st.markdown("""
+    ## 🔗 Project Repository
+    
+    **Explore the complete project on GitHub:**
+    """)
+    
+    # Create a prominent button for GitHub
+    github_button = st.button(
+        "🐙 View on GitHub",
+        help="Access the complete source code, documentation, and project files",
+        use_container_width=True
+    )
+    
+    if github_button:
+        st.markdown("""
+        <script>
+        window.open('https://github.com/st8ko/diet-recommendation-app', '_blank');
+        </script>
+        """, unsafe_allow_html=True)
+    
+    # Alternative link
+    st.markdown("""
+    **Direct link**: [https://github.com/st8ko/diet-recommendation-app](https://github.com/st8ko/diet-recommendation-app)
+    
+    """)
+    
+    # Skills demonstrated
+    st.markdown("""
+    ## 🎯 Skills Demonstrated
+    
+    **Data Science**: Big data processing, statistical analysis, feature engineering, EDA
+    
+    **Software Engineering**: Clean architecture, performance optimization, error handling
+    
+    **Web Development**: Interactive applications, UI/UX design, user experience
+    
+    **Product Development**: Requirements analysis, technical documentation, project management
+    """)
+    
+    st.markdown("---")
+    st.markdown("*Built with ❤️ using Python and Streamlit*")
+
+def meal_planner_page():
+    """Display the main meal planner functionality"""
+    # Add top navigation hint
+    st.markdown("""
+    <div style="background-color: #f0f8ff; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+        💡 <strong>Tip:</strong> Use the sidebar navigation buttons to switch between <strong>Meal Planner</strong> and <strong>About Project</strong> pages!
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.title("🍽️ Daily Meal Planner")
     st.markdown("Create your personalized daily meal plan based on your dietary preferences and goals!")
     
@@ -561,46 +695,6 @@ def main():
             st.write(f"**Average protein per recipe:** {df['ProteinContent'].mean():.1f}g")
             st.write(f"**Recipe columns:** {', '.join(df.columns.tolist())}")
     
-    # Sidebar for inputs
-    st.sidebar.header("📊 Daily Goals")
-    target_calories = st.sidebar.number_input(
-        "Target Calories:", 
-        min_value=1000, 
-        max_value=5000, 
-        value=2500, 
-        step=50,
-        help="Your daily caloric goal"
-    )
-    target_protein = st.sidebar.number_input(
-        "Target Protein (g):", 
-        min_value=50, 
-        max_value=300, 
-        value=120, 
-        step=5,
-        help="Your daily protein goal in grams"
-    )
-    max_meals = st.sidebar.slider(
-        "Maximum number of meals:", 
-        min_value=3, 
-        max_value=7, 
-        value=4,
-        help="Maximum number of meals per day"
-    )
-    
-    tolerance = st.sidebar.slider(
-        "Tolerance for calorie/protein matching:",
-        min_value=0.1,
-        max_value=0.5,
-        value=0.2,
-        step=0.05,
-        help="How flexible should the matching be? Higher = more flexible"
-    )
-    
-    # Display options
-    st.sidebar.header("📋 Display Options")
-    show_compact = st.sidebar.checkbox("Show compact meal overview", value=True)
-    show_detailed = st.sidebar.checkbox("Show detailed recipe information", value=True)  # Changed to True by default
-    
     # Main content area
     preferences = collect_preferences()
     
@@ -619,6 +713,14 @@ def main():
     # Generate meal plan button
     if st.button("🎯 Generate My Meal Plan", type="primary"):
         with st.spinner("Creating your personalized meal plan..."):
+            # Get sidebar values
+            target_calories = st.session_state.get('target_calories', 2500)
+            target_protein = st.session_state.get('target_protein', 120)
+            tolerance = st.session_state.get('tolerance', 0.2)
+            max_meals = st.session_state.get('max_meals', 4)
+            show_compact = st.session_state.get('show_compact', True)
+            show_detailed = st.session_state.get('show_detailed', True)
+            
             # Filter recipes
             df_filtered = filter_by_preferences(df, preferences)
             
@@ -734,6 +836,110 @@ def main():
                 
                 else:
                     st.error("❌ Could not generate meal plan. Try adjusting your preferences!")
+
+def main():
+    """Main application with page navigation"""
+    # Page selection in sidebar with prominent buttons
+    st.sidebar.markdown("""
+    <div style="text-align: center; padding: 10px; margin-bottom: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                border-radius: 10px; color: white;">
+        <h2 style="margin: 0; color: white;">🧭 Navigation</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Initialize page state if not exists
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "🍽️ Meal Planner"
+    
+    # Create navigation buttons
+    col1, col2 = st.sidebar.columns(2)
+    
+    with col1:
+        if st.button("🍽️\nMeal\nPlanner", 
+                    key="nav_meal_planner",
+                    help="Create personalized meal plans",
+                    use_container_width=True):
+            st.session_state.current_page = "🍽️ Meal Planner"
+    
+    with col2:
+        if st.button("📖\nAbout\nProject", 
+                    key="nav_about",
+                    help="Learn about this project",
+                    use_container_width=True):
+            st.session_state.current_page = "📖 About"
+    
+    # Add visual indicator for current page
+    if st.session_state.current_page == "🍽️ Meal Planner":
+        st.sidebar.markdown("""
+        <div style="text-align: center; padding: 5px; margin: 10px 0; 
+                    background-color: #e8f5e8; border-radius: 5px; 
+                    border-left: 4px solid #4CAF50;">
+            <small><strong>📍 Currently on: Meal Planner</strong></small>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.sidebar.markdown("""
+        <div style="text-align: center; padding: 5px; margin: 10px 0; 
+                    background-color: #e8f0ff; border-radius: 5px; 
+                    border-left: 4px solid #2196F3;">
+            <small><strong>📍 Currently on: About Project</strong></small>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    page = st.session_state.current_page
+    
+    # Sidebar for inputs (only show on meal planner page)
+    if page == "🍽️ Meal Planner":
+        st.sidebar.markdown("---")
+        st.sidebar.header("📊 Daily Goals")
+        target_calories = st.sidebar.number_input(
+            "Target Calories:", 
+            min_value=1000, 
+            max_value=5000, 
+            value=2500, 
+            step=50,
+            help="Your daily caloric goal",
+            key="target_calories"
+        )
+        target_protein = st.sidebar.number_input(
+            "Target Protein (g):", 
+            min_value=50, 
+            max_value=300, 
+            value=120, 
+            step=5,
+            help="Your daily protein goal in grams",
+            key="target_protein"
+        )
+        max_meals = st.sidebar.slider(
+            "Maximum number of meals:", 
+            min_value=3, 
+            max_value=7, 
+            value=4,
+            help="Maximum number of meals per day",
+            key="max_meals"
+        )
+        
+        tolerance = st.sidebar.slider(
+            "Tolerance for calorie/protein matching:",
+            min_value=0.1,
+            max_value=0.5,
+            value=0.2,
+            step=0.05,
+            help="How flexible should the matching be? Higher = more flexible",
+            key="tolerance"
+        )
+        
+        # Display options
+        st.sidebar.header("📋 Display Options")
+        show_compact = st.sidebar.checkbox("Show compact meal overview", value=True, key="show_compact")
+        show_detailed = st.sidebar.checkbox("Show detailed recipe information", value=True, key="show_detailed")
+    
+    # Display selected page
+    if page == "🍽️ Meal Planner":
+        meal_planner_page()
+    elif page == "📖 About":
+        about_page()
 
 if __name__ == "__main__":
     main()

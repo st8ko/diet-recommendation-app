@@ -13,7 +13,7 @@ This comprehensive diet recommendation system demonstrates advanced **data scien
 
 ### 🌟 **Inspiration & Data Sources**
 
-This project was inspired by [zakaria-narjis/Diet-Recommendation-System](https://github.com/zakaria-narjis/Diet-Recommendation-System) and builds upon that foundation with enhanced data processing, improved algorithms, and a modern web interface.
+This project was inspired by [zakaria-narjis/Diet-Recommendation-System](https://github.com/zakaria-narjis/Diet-Recommendation-System). 
 
 **Data Sources:**
 - 📊 **Primary Dataset**: [Food.com Recipes and Reviews](https://www.kaggle.com/datasets/irkaal/foodcom-recipes-and-reviews?select=recipes.csv) - 960K+ recipes with comprehensive nutritional information
@@ -251,10 +251,10 @@ This project showcases expertise in:
 
 Interested in discussing this project or potential collaboration opportunities? 
 
-- 📧 **Email**: [your.email@domain.com]
-- 💼 **LinkedIn**: [Your LinkedIn Profile]
-- 🐙 **GitHub**: [Your GitHub Profile]
-- 🌐 **Portfolio**: [Your Portfolio Website]
+- 📧 **Email**: [ignacyruszkowski@gmail.com]
+- 💼 **LinkedIn**: [[Your LinkedIn Profile](https://www.linkedin.com/in/igrusz/)]
+- 🐙 **GitHub**: [[Your GitHub Profile](https://github.com/st8ko)]
+- 🌐 **Substack**: [[Your Portfolio Website](https://ignacyr.substack.com/)]
 
 ---
 

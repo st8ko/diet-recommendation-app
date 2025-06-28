@@ -193,9 +193,11 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Data files - too large for Git
-data/
-*.csv
+# Ignore other files in data/, but allow these two
+data/*
+!data/recipes.csv
+!data/another-dataset/recipes_w_search_terms.csv
+!data/mvp_recipes_clean.csv
 *.parquet
 *.pkl
 
