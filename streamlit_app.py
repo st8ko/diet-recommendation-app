@@ -176,8 +176,8 @@ def format_instructions(instructions_str):
     
     return ["Instructions not available"]
 
-def format_ingredients(ingredients_str):
-    """Format recipe ingredients for better display"""
+def format_ingredients(ingredients_str, quantities_str=None):
+    """Format recipe ingredients with quantities for better display"""
     if pd.isna(ingredients_str) or ingredients_str == "":
         return ["Ingredients not available"]
     
@@ -195,10 +195,52 @@ def format_ingredients(ingredients_str):
         if matches:
             ingredients = [ing.strip() for ing in matches if ing.strip()]
         else:
-            # Fallback: split by common delimiters
-            ingredients = [cleaned]
+            # Fallback: try to split by commas and clean up
+            # This handles cases where quotes might be malformed
+            parts = cleaned.split(',')
+            ingredients = []
+            for part in parts:
+                # Remove quotes, brackets, whitespace, and other formatting
+                clean_part = part.strip().strip('"').strip("'").strip("['").strip("']").strip()
+                if clean_part and clean_part != "":
+                    ingredients.append(clean_part)
+            
+            # If we still don't have good ingredients, return a fallback message
+            if not ingredients:
+                ingredients = ["Ingredients not available"]
         
-        return ingredients[:15]  # Limit to 15 ingredients for display
+        # Process quantities if provided
+        quantities = []
+        if quantities_str and not pd.isna(quantities_str) and quantities_str != "":
+            if isinstance(quantities_str, str):
+                # Remove c( and trailing )
+                cleaned_qty = quantities_str.strip()
+                if cleaned_qty.startswith('c(') and cleaned_qty.endswith(')'):
+                    cleaned_qty = cleaned_qty[2:-1]
+                
+                # Extract quantities using regex
+                qty_matches = re.findall(r'"([^"]*)"', cleaned_qty)
+                if qty_matches:
+                    quantities = [qty.strip() for qty in qty_matches if qty.strip()]
+                else:
+                    # Fallback for quantities
+                    qty_parts = cleaned_qty.split(',')
+                    for part in qty_parts:
+                        clean_qty_part = part.strip().strip('"').strip("'").strip('[').strip(']').strip()
+                        if clean_qty_part and clean_qty_part != "":
+                            quantities.append(clean_qty_part)
+        
+        # Combine ingredients with quantities if available
+        combined_ingredients = []
+        for i, ingredient in enumerate(ingredients[:15]):  # Limit to 15 ingredients
+            if quantities and i < len(quantities) and quantities[i]:
+                # Format as "quantity ingredient"
+                combined_ingredients.append(f"{quantities[i]} {ingredient}")
+            else:
+                # Just the ingredient if no quantity available
+                combined_ingredients.append(ingredient)
+        
+        return combined_ingredients
     
     return ["Ingredients not available"]
 
@@ -270,14 +312,21 @@ def display_detailed_recipe(recipe_data, meal_name):
         # Ingredients section
         st.markdown("---")
         st.markdown("**🛒 Ingredients**")
-        ingredients = format_ingredients(recipe_data.get('RecipeIngredientParts', ''))
         
-        # Display ingredients in a nice format
-        if len(ingredients) > 1:
-            for i, ingredient in enumerate(ingredients, 1):
-                st.markdown(f"{i}. {ingredient}")
+        # Check if quantities column exists
+        if 'RecipeIngredientQuantities' in recipe_data:
+            ingredients = format_ingredients(
+                recipe_data.get('RecipeIngredientParts', ''),
+                recipe_data.get('RecipeIngredientQuantities', '')
+            )
         else:
-            st.markdown(ingredients[0])
+            # Fallback to ingredients only with a note
+            ingredients = format_ingredients(recipe_data.get('RecipeIngredientParts', ''))
+            st.markdown("*Note: Ingredient quantities not available in this dataset version*")
+        
+        # Display ingredients as clean bullet points
+        for ingredient in ingredients:
+            st.markdown(f"• {ingredient}")
         
         # Instructions section
         st.markdown("---")
@@ -350,16 +399,16 @@ def filter_by_preferences(dataframe, preferences):
         df_filtered = df_filtered[df_filtered['Vegan']==1]
         
     if preferences.get('pescatarian') == 'y':
-        df_filtered = df_filtered[df_filtered['Pescatarian'] ==1]
+        df_filtered = df_filtered[df_filtered['Pescatarian']==1]
         
     if preferences.get('easy') == 'y':
         df_filtered = df_filtered[df_filtered['Easy']==1]
         
     if preferences.get('glutenfree') == 'y':
-        df_filtered = df_filtered[df_filtered['GlutenFree'] ==1]
+        df_filtered = df_filtered[df_filtered['GlutenFree']==1]
         
     if preferences.get('dairyfree') == 'y':
-        df_filtered = df_filtered[df_filtered['DairyFree'] ==1]
+        df_filtered = df_filtered[df_filtered['DairyFree']==1]
         
     if preferences.get('calories') == 'l':
         df_filtered = df_filtered[df_filtered['LowCalorie']==1]

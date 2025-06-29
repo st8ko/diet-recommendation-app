@@ -55,6 +55,12 @@ def export_mvp_dataset():
         lambda x: 1 if not any(meat_item in x for meat_item in meat_list) else 0
     )
     
+    # Encode Pescatarian feature (allows fish but no other meat)
+    non_fish_meat = ['beef', 'pork', 'chicken', 'turkey', 'lamb', 'meat', 'bacon', 'ham']
+    df['Pescatarian'] = df['Keywords'].apply(
+        lambda x: 1 if not any(meat_item in x for meat_item in non_fish_meat) else 0
+    )
+    
     # Encode time-based features
     quick_keywords = ['< 15 mins', '< 30 mins', 'quick', 'fast']
     df['Quick'] = df['Keywords'].apply(
@@ -72,6 +78,19 @@ def export_mvp_dataset():
         lambda x: 1 if any(kw in x for kw in long_prep_keywords) else 0
     )
     
+    # Encode dietary restriction features
+    gluten_free_keywords = ['gluten-free', 'gluten free', 'celiac', 'wheat-free', 'wheat free']
+    df['GlutenFree'] = df['Keywords'].apply(
+        lambda x: 1 if any(kw in x for kw in gluten_free_keywords) else 0
+    )
+    
+    dairy_free_keywords = ['dairy-free', 'dairy free', 'lactose-free', 'lactose free', 'vegan']
+    dairy_products = ['milk', 'cheese', 'butter', 'cream', 'yogurt']
+    df['DairyFree'] = df['Keywords'].apply(
+        lambda x: 1 if (any(kw in x for kw in dairy_free_keywords) or 
+                       not any(dairy in x for dairy in dairy_products)) else 0
+    )
+    
     # Encode nutritional categories
     df['LowCalorie'] = (df['Calories'] < 300).astype(int)
     df['ModerateCalorie'] = ((df['Calories'] >= 300) & (df['Calories'] <= 600)).astype(int)
@@ -81,18 +100,35 @@ def export_mvp_dataset():
     df['ModerateProtein'] = ((df['ProteinContent'] >= 10) & (df['ProteinContent'] <= 20)).astype(int)
     df['HighProtein'] = (df['ProteinContent'] > 20).astype(int)
     
+    # Create MealCat column based on recipe category
+    meal_category_mapping = {
+        'appetizers': 'Snacks',
+        'beverages': 'Snacks', 
+        'breakfast': 'Breakfast',
+        'brunch': 'Breakfast',
+        'desserts': 'Snacks',
+        'lunch/snacks': 'Lunch/Dinner',
+        'main dish': 'Lunch/Dinner',
+        'side dish': 'Lunch/Dinner',
+        'soups': 'Lunch/Dinner',
+        'salads': 'Lunch/Dinner'
+    }
+    
+    df['MealCat'] = df['RecipeCategory'].str.lower().map(meal_category_mapping).fillna('Lunch/Dinner')
+    
     # Define MVP features and columns
     mvp_features = [
-        'Easy', 'Vegan', 'Vegetarian',
+        'Easy', 'Vegan', 'Vegetarian', 'Pescatarian',
         'Quick', 'StandardPrepTime', 'LongPrepTime',
         'LowCalorie', 'ModerateCalorie', 'HighCalorie',
-        'LowProtein', 'ModerateProtein', 'HighProtein'
+        'LowProtein', 'ModerateProtein', 'HighProtein',
+        'GlutenFree', 'DairyFree'
     ]
     
     mvp_columns = [
         # Basic recipe information
-        'RecipeId', 'Name', 'Description', 'RecipeCategory', 'AggregatedRating', 'ReviewCount',
-        'CookTime', 'PrepTime', 'TotalTime', 'RecipeYield', 'RecipeInstructions',
+        'RecipeId', 'Name', 'Description', 'RecipeCategory', 'MealCat', 'AggregatedRating', 'ReviewCount',
+        'CookTime', 'PrepTime', 'TotalTime', 'RecipeYield', 'RecipeInstructions', 'RecipeIngredientQuantities',
         
         # Nutritional information
         'Calories', 'ProteinContent', 'FatContent', 'SaturatedFatContent', 
@@ -102,10 +138,11 @@ def export_mvp_dataset():
         'Keywords', 'RecipeIngredientParts',
         
         # MVP encoded features
-        'Easy', 'Vegan', 'Vegetarian',
+        'Easy', 'Vegan', 'Vegetarian', 'Pescatarian',
         'Quick', 'StandardPrepTime', 'LongPrepTime',
         'LowCalorie', 'ModerateCalorie', 'HighCalorie',
-        'LowProtein', 'ModerateProtein', 'HighProtein'
+        'LowProtein', 'ModerateProtein', 'HighProtein',
+        'GlutenFree', 'DairyFree'
     ]
     
     # Create MVP dataset
