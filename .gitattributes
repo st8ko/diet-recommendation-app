@@ -1,3 +1,2 @@
-data/recipes.csv filter=lfs diff=lfs merge=lfs -text
-data/another-dataset/recipes_w_search_terms.csv filter=lfs diff=lfs merge=lfs -text
+# Only track the MVP dataset with LFS
 data/mvp_recipes_clean.csv filter=lfs diff=lfs merge=lfs -text

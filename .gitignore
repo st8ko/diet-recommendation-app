@@ -193,13 +193,16 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Ignore other files in data/, but allow these two
+# Ignore most files in data/, but allow specific files
 data/*
-!data/recipes.csv
-!data/another-dataset/recipes_w_search_terms.csv
 !data/mvp_recipes_clean.csv
+!data/mvp_metadata.json
 *.parquet
 *.pkl
+
+# Exclude large datasets that are not needed in repository
+data/recipes.csv
+data/another-dataset/recipes_w_search_terms.csv
 
 # macOS files
 .DS_Store
