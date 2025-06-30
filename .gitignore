@@ -200,10 +200,10 @@ data/*
 *.parquet
 *.pkl
 
-# Exclude large datasets that are not needed in repository
-data/recipes.csv
-data/another-dataset/recipes_w_search_terms.csv
+# Ignore large original and search-term datasets
+/data/recipes.csv
+/data/another-dataset/recipes_w_search_terms.csv
 
 # macOS files
 .DS_Store
-**/.DS_Store" >> .gitignore
+**/.DS_Store
