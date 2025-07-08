@@ -564,20 +564,36 @@ def generate_daily_meal_plan(df_filtered, target_calories=2500, target_protein=1
                     continue
             else:
                 # Select highest rated recipe from suitable options
-                if 'AggregatedRating' in df_suitable.columns:
+                if 'AggregatedRating' in df_suitable.columns and not df_suitable['AggregatedRating'].isna().all():
                     max_rating = df_suitable['AggregatedRating'].max()
                     top_rated = df_suitable[df_suitable['AggregatedRating'] == max_rating]
-                    selected_recipe = top_rated.sample(n=1).iloc[0]
+                    if len(top_rated) > 0:
+                        selected_recipe = top_rated.sample(n=1).iloc[0]
+                    elif len(df_suitable) > 0:
+                        selected_recipe = df_suitable.sample(n=1).iloc[0]
+                    else:
+                        continue
                 else:
-                    selected_recipe = df_suitable.sample(n=1).iloc[0]
+                    if len(df_suitable) > 0:
+                        selected_recipe = df_suitable.sample(n=1).iloc[0]
+                    else:
+                        continue
         else:
             # Select highest rated recipe from suitable options
-            if 'AggregatedRating' in df_suitable.columns:
+            if 'AggregatedRating' in df_suitable.columns and not df_suitable['AggregatedRating'].isna().all():
                 max_rating = df_suitable['AggregatedRating'].max()
                 top_rated = df_suitable[df_suitable['AggregatedRating'] == max_rating]
-                selected_recipe = top_rated.sample(n=1).iloc[0]
+                if len(top_rated) > 0:
+                    selected_recipe = top_rated.sample(n=1).iloc[0]
+                elif len(df_suitable) > 0:
+                    selected_recipe = df_suitable.sample(n=1).iloc[0]
+                else:
+                    continue
             else:
-                selected_recipe = df_suitable.sample(n=1).iloc[0]
+                if len(df_suitable) > 0:
+                    selected_recipe = df_suitable.sample(n=1).iloc[0]
+                else:
+                    continue
         
         # Add to meal plan with full recipe data
         meal_plan[meal] = selected_recipe
