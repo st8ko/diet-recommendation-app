@@ -697,18 +697,12 @@ def about_page():
     """)
     
     # Create a prominent button for GitHub
-    github_button = st.button(
+    st.link_button(
         "🐙 View on GitHub",
+        "https://github.com/st8ko/diet-recommendation-app",
         help="Access the complete source code, documentation, and project files",
         use_container_width=True
     )
-    
-    if github_button:
-        st.markdown("""
-        <script>
-        window.open('https://github.com/st8ko/diet-recommendation-app', '_blank');
-        </script>
-        """, unsafe_allow_html=True)
     
     # Alternative link
     st.markdown("""
