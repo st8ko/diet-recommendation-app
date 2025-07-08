@@ -4,9 +4,6 @@ import numpy as np
 import random
 import re
 import time
-import threading
-from concurrent.futures import ThreadPoolExecutor
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 # Set page config
 st.set_page_config(
@@ -20,98 +17,50 @@ def _load_csv_data():
     return pd.read_csv('data/mvp_recipes_clean.csv')
 
 def load_data():
-    """Load data with adaptive progress indication"""
+    """Load data with simple progress indication"""
     try:
         if 'data_loaded' not in st.session_state:
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            # Container for the loaded data
-            data_container = {'df': None, 'loading': True, 'error': None}
-            start_time = time.time()
-            
-            def load_in_background():
-                try:
-                    data_container['df'] = _load_csv_data()
-                except Exception as e:
-                    data_container['error'] = e
-                finally:
-                    data_container['loading'] = False
-            
-            # Start loading in background
-            thread = threading.Thread(target=load_in_background)
-            thread.start()
-            
-            # Adaptive progress - speeds up if loading takes longer
-            progress = 0
-            messages = [
-                '🔍 Locating recipe database...',
-                '📊 Loading recipe data...',
-                '📊 Reading CSV file...',
-                '🧹 Processing data...',
-                '🧹 Cleaning data...',
-                '✅ Validating recipe information...',
-                '✨ Almost ready...'
-            ]
-            
-            message_index = 0
-            cycle_count = 0
-            
-            while data_container['loading']:
-                elapsed_time = time.time() - start_time
+            # Simple progress indication without threading
+            with st.spinner('🔍 Loading recipe database...'):
+                progress_bar = st.progress(0)
+                status_text = st.empty()
                 
-                # Adaptive progress calculation
-                if elapsed_time < 3:
-                    # Fast progress for first 3 seconds
-                    progress = min(60, int(elapsed_time * 20))
-                elif elapsed_time < 8:
-                    # Slower progress for 3-8 seconds
-                    progress = 60 + min(25, int((elapsed_time - 3) * 5))
-                else:
-                    # Very slow progress after 8 seconds
-                    progress = 85 + min(10, int((elapsed_time - 8) * 2))
+                # Show loading messages
+                messages = [
+                    '📊 Reading recipe data...',
+                    '🧹 Processing nutritional information...',
+                    '✅ Validating recipe database...',
+                    '✨ Almost ready...'
+                ]
                 
-                # Update message periodically
-                if int(elapsed_time) > message_index and message_index < len(messages):
-                    status_text.text(messages[message_index])
-                    message_index += 1
-                elif message_index >= len(messages):
-                    # Cycle through waiting messages if taking very long
-                    waiting_messages = [
-                        '⏳ Still loading, please wait...',
-                        '🔄 Processing large dataset...',
-                        '⌛ Almost there...'
-                    ]
-                    status_text.text(waiting_messages[cycle_count % len(waiting_messages)])
-                    cycle_count += 1
+                for i, message in enumerate(messages):
+                    status_text.text(message)
+                    progress_bar.progress((i + 1) * 25)
+                    time.sleep(0.2)  # Brief pause for user feedback
                 
-                progress_bar.progress(progress)
+                # Load the data (this is cached by @st.cache_data)
+                df = _load_csv_data()
+                
+                # Final progress
+                status_text.text('✨ Ready to create your meal plan!')
+                progress_bar.progress(100)
                 time.sleep(0.3)
-            
-            # Wait for loading to complete
-            thread.join()
-            
-            if data_container['error']:
-                raise data_container['error']
-            
-            # Final progress
-            status_text.text('✨ Ready to create your meal plan!')
-            progress_bar.progress(100)
-            time.sleep(0.3)
-            
-            progress_bar.empty()
-            status_text.empty()
-            
-            st.session_state.data_loaded = True
-            return data_container['df']
+                
+                # Clean up progress elements
+                progress_bar.empty()
+                status_text.empty()
+                
+                st.session_state.data_loaded = True
+                return df
         else:
+            # Data already loaded, return from cache
             return _load_csv_data()
             
     except FileNotFoundError:
-        st.error("Recipe dataset not found.")
+        st.error("📁 Recipe dataset not found. Please ensure 'data/mvp_recipes_clean.csv' exists.")
         return pd.DataFrame()
     except Exception as e:
-        st.error(f"Error loading data: {str(e)}")
+        st.error(f"❌ Error loading data: {str(e)}")
         return pd.DataFrame()
     
 def format_time(time_str):
